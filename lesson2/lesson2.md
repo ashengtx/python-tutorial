@@ -1,5 +1,36 @@
 ## 补充
 
+### Basic Operators
+
+运算符类型；
+
+- Arithmetic Operators
+- Comparison (Relational) Operators
+- Assignment Operators
+- Logical Operators
+- Bitwise Operators
+- Membership Operators
+- Identity Operators
+
+#### Arithmetic Operators 算术运算符
+
+```
++ - * / % ** //
+```
+
+#### Comparison (Relational) Operators 比较符
+
+```
+>
+>=
+<
+<=
+
+== 两个等号是判断是否相等，一个等号是赋值
+!= 
+<>
+```
+
 ### String Formatting
 
 
@@ -94,7 +125,7 @@ del emp1.age  # Delete 'age' attribute.
 
 ## Modules
 
-使用模块可以从其他python文件定义好的类或者函数
+使用模块可以从其他python文件导入定义好的类或者函数
 
 两种导入方法
 ```python
@@ -126,11 +157,13 @@ print(math.sqrt(9)) #3.0
 
 ### dir()
 
-输出模块内定义的变量名
+输出模块内定义的变量与函数
 
 ```python
 import math
 print(dir(math))
+
+help(math.pow)
 ```
 output：
 ```
@@ -142,6 +175,18 @@ output：
 'log2', 'modf', 'nan', 'pi', 'pow', 'radians', 'sin', 'sinh', 'sqrt', 'tan', 
 'tanh', 'trunc']
 
-其中__name__是模块名, __file__ 是模块的文件名（包括路径）
+pow(...)
+    pow(x, y)
+    
+    Return x**y (x to the power of y).
 ```
 
+其中，```__name__```是模块名，在当前文件下```__name__ == 'main'```
+
+- 在use_module文件对比import employee 与 employee2
+
+## Files I/O
+
+### Printing to the screen
+
+最简单的输出，```print(expression1, expression2, ...)```，将几个逗号隔开的表达式以字符的形式输出到 **标准输出**，即屏幕。
