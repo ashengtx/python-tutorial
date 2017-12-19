@@ -1,6 +1,3 @@
-* TOC
-{:toc}
-
 ## Python 基础补充介绍
 
 ### Basic Operators
