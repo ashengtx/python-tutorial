@@ -1,4 +1,5 @@
-[TOC]
+* TOC
+{:toc}
 
 ## Python 基础补充介绍
 
