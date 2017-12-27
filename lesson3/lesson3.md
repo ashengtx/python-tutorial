@@ -185,8 +185,9 @@ print(joke_text)
 ```
 
 output
-```py
-闺女两岁多还没有分床睡，和老公一周见一次，此为背景！晚上上床后，闺女不肯睡，在一边玩积木；我和老公一周未见早已意乱情迷，索性躲被窝里啪了起来！片刻之后，感觉快到了，一边做一边接着吻忍不住呜呜咽咽叫出声来……这时只见一个小脑袋好奇的凑了过来：“怎么了，妈妈咋哭了…”然后盯着老公看了看“爸爸在欺负妈妈！”说着在老公脸上啪啪啪就扇了几巴掌！特么哭笑不得！估计老公得有阴影了！
+```
+（很长很真实也很有感情。）记得八年前，我上小学五年级，全家一起来到了开封县。这是个陌生的城市。爸爸怕影响我学习，给我报了英语补习班。每天最开心的事情就是，晚上补习班放学，看见妈妈在门口笑着等我。然后回家的路上，妈妈都会带我到一个打烧饼的阿姨那里。五毛钱一个烧饼，一块钱一个牛排。买给我吃……（在哪个时候，可是难得的美味）第一开始，我都会没良心的吃独食，吃完还想吃。后来有一天，我刚拿到烧饼要咬第一口，抬头看见妈妈在看我吃。我问妈妈要不要吃。妈妈说“宝贝，妈妈看你吃就很开心。”我把烧饼全是芝
+…
 ```
 
 关于get_text()的使用：
@@ -235,13 +236,118 @@ def get_jokes_re(url):
 
 [跨行匹配问题](http://www.lfhacks.com/tech/python-re-single-multiline)
 
-### 3.2 知乎文本爬取
+### 3.2 豆瓣电影排行爬取
 
-比如，我要爬取含有关键词"python"的问题。
+比如，我们点开[豆瓣电影排行榜](https://movie.douban.com/chart)，右边有许多分类，我们选择第一个剧情分类点开。出现按评分从高到低排序的电影。
 
-先找到搜索问题的url
+我们想要获取这些电影相关信息以及评分。
+
+根据前面所学，本能的想拿url试一下
+
 ```py
-url = 'https://www.zhihu.com/search?type=content&q='
-query_url = url + 'python'
+from utils import *
+
+def get_movies():
+    """
+    查看输出结果，会发现，没有电影信息
+    """
+    type_url = "https://movie.douban.com/typerank?type_name=%E5%89%A7%E6%83%85&type=11&interval_id=100:90&action="
+    html = get_html(base_url)
+    foutput = open('../txt/output.txt', 'w')
+    print(html, file=foutput)
+
+if __name__ == '__main__':
+    
+    get_movies()
+
 ```
 
+说明电影信息不是由请求这个url产生的
+
+这时候可以使用chrome的开发者工具来分析具体是哪个请求，按F12打开开发者工具。
+
+分析出实际返回电影信息的请求其实是
+```
+https://movie.douban.com/j/chart/top_list?type=11&interval_id=100%3A90&action=&start=0&limit=20
+```
+
+试一下这个新的url
+
+```py
+from utils import *
+
+def get_movies2():
+    """
+    获得电影信息
+    """
+    base_url = 'https://movie.douban.com/j/chart/top_list?type=11&interval_id=100%3A90&action=&start=0&limit=20'
+
+    html = get_html(base_url)
+    foutput = open('../txt/output.txt', 'w')
+    print(html, file=foutput)
+
+if __name__ == '__main__':
+
+    get_movies2()
+```
+
+如果返回的是json格式的字符串，可以直接用python的json模块解析，但是这个返回的比较特殊，它是多个json格式字符串在一个列表里，然后一整个列表又是字符串。
+
+暂时没找到优雅的解析方法，不过可以用正则表达式解析出单独的json字符串，再解析json.
+
+```py
+import re, json
+from utils import *
+
+def get_movies2():
+    """
+    获得电影信息
+    """
+    base_url = 'https://movie.douban.com/j/chart/top_list?type=11&interval_id=100%3A90&action=&start=0&limit=20'
+
+    html = get_html(base_url)
+    foutput = open('../txt/output.txt', 'w')
+    print(html, file=foutput)
+    pattern = r'(\{"rating.*?\})[(,\{)\]]'
+    movies = re.findall(pattern, html) 
+    for movie in movies:
+        print(json.loads(movie))
+    print(len(movies))
+
+
+if __name__ == '__main__':
+
+    get_movies2()
+
+```
+
+将json样式的字符串解析成json对象之后，就可以通过dict的方式来访问。
+
+```py
+import re, json
+from utils import *
+
+def get_movies2():
+    """
+    """
+    base_url = 'https://movie.douban.com/j/chart/top_list?type=11&interval_id=100%3A90&action=&start=0&limit=20'
+
+    html = get_html(base_url)
+    foutput = open('../txt/output.txt', 'w')
+    print(html, file=foutput)
+    pattern = r'(\{"rating.*?\})[(,\{)\]]'
+    movies = re.findall(pattern, html) 
+    result = []
+    for movie in movies:
+        data = json.loads(movie)
+        title = data['title']
+        rating = data['rating'][0]
+        #print(title,rating)
+        result.append((title, rating))
+    return result
+
+if __name__ == '__main__':
+
+    for title, rating in get_movies2():
+        print(title, rating)
+```
