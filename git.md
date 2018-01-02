@@ -7,7 +7,7 @@
 
 ### 打开git bash
 
-在某个文件夹下右键鼠标打开git bash
+windows下在某个文件夹下右键鼠标打开git bash
 
 ### git clone
 
