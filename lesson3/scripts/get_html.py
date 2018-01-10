@@ -1,28 +1,23 @@
-from urllib.request import Request, urlopen
+import numpy as np
+import matplotlib.pyplot as plt
 
-headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36'}
+# Compute the x and y coordinates for points on sine and cosine curves
+x = np.arange(0, 3 * np.pi, 0.1)
+y_sin = np.sin(x)
+y_cos = np.cos(x)
 
-def get_html(url):
-    """
-    请求url，返回html
-    """
-    req = Request(url, headers=headers)  
-    html = urlopen(req).read().decode('utf8')
-    return html
+# Set up a subplot grid that has height 2 and width 1, 设置2*1的网格
+# and set the first such subplot as active. 开始画第一个网格里的图
+plt.subplot(2, 1, 1)
 
-def get_html2(url):
-    """
-    请求url，返回html
-    """
-    html = urlopen(url).read().decode('utf8')
-    return html
+# Make the first plot
+plt.plot(x, y_sin)
+plt.title('Sine')
 
+# Set the second subplot as active, and make the second plot. 开始画第二个网格的图
+plt.subplot(2, 1, 2)
+plt.plot(x, y_cos)
+plt.title('Cosine')
 
-if __name__ == "__main__":
-
-    url = "https://www.qiushibaike.com/hot/page/1/"
-    #url = "https://baike.baidu.com/item/Python/407313"
-    foutput = open('../txt/output.txt', 'w')
-    print(get_html2(url), file=foutput) # 会报错，换get_html试试
-    foutput.close()
-
+# Show the figure.
+plt.show()

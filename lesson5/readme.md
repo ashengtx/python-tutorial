@@ -1,6 +1,6 @@
 # python爬虫进阶与文本处理
 
-## 博客园博客文章爬取
+## 一、博客园博客文章爬取
 
 博客园[链接](http://www.cnblogs.com/)
 
@@ -512,4 +512,164 @@ http://www.cnblogs.com/zhaopei/p/4920147.html
 
 到这里，我们就获取了这位博主所有的博客文章
 
-## 简单的文本处理
+## 二、简单的文本处理
+
+### 词频统计
+
+```py
+def load_stop_words():
+    """
+    载入停用词
+    """
+    stop_words = []
+    with open('../dict/stop_words.txt', 'r', encoding='utf8') as f:
+        for line in f:
+            stop_words.append(line.strip())
+    return stop_words
+
+def get_word_freq():
+    """
+    统计词频
+    """
+    stop_words = load_stop_words()
+    word_freq = defaultdict(int) # 这个dict的value默认为0
+    with open('../txt/articles.txt', 'r', encoding='utf8') as f:
+        for line in f:
+            if line.startswith('article') or line.startswith('body:'):
+                continue
+            if line.startswith('title:'):
+                line = line.replace('title:', '')
+            # 对句子分词
+            result = jieba.cut(line.strip())
+            for word in result:
+                # 去掉停用词
+                if word in stop_words:
+                    continue
+                # 统计词频
+                word_freq[word] += 1
+    return word_freq
+```
+
+函数```load_stop_words```用来载入我们的停用词表，用来过滤掉一些无意义的词。
+
+我们把词频保存在```defaultdict(int)```这个数据结构中，它和```dict```的区别在于
+
+```py
+d1 = dict()
+d1['hello'] += 1 # 这个会报错，因为d1里面没有'hello'对应的值
+
+from collections import defaultdict
+d2 = defaultdict(int)
+d2['hello'] += 1 # 这个不会报错，因为defaultdict给了'hello'一个默认的int值0
+```
+
+然后，我们将词频统计完，从高到低显示出来
+
+```py
+def show_word_freq(word_freq, min_freq=0):
+    """
+    将词频排序，并从高到低输入
+
+    max_freq 最大词频，小于这个值的词不显示出来
+    """
+
+    # 先对word_freq排序
+    word_freq_sorted = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+    for word, freq in word_freq_sorted:
+        print(word, freq)
+        if freq < min_freq:
+            break
+
+    return True
+```
+
+或者我们可以将词频保存到csv文件
+
+```py
+def save_word_freq_to_csv(word_freq, min_freq=0):
+    """
+    将词频排序，并从高到低，保存到csv文件
+    """
+    word_freq_sorted = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+    with open('../csv/word_freq.csv', 'w', encoding='utf8') as f_csv:
+        for word, freq in word_freq_sorted:
+            print(word, ',', freq, file=f_csv)
+            if freq < min_freq:
+                break
+    return True
+```
+
+### 基于 TF-IDF 算法的关键词抽取
+
+我们可以先将刚刚处理（分词，去停用词等...）的原始文本保存到另一个文件备用，这个工作也叫做文本预处理。
+
+```py
+def preprocess():
+    """
+    """
+    stop_words = load_stop_words()
+    file_output = open('../txt/articles_seg.txt', 'w', encoding='utf8')
+    with open('../txt/articles.txt', 'r', encoding='utf8') as f:
+        for line in f:
+            if line.startswith('article') or line.startswith('body:'):
+                continue
+            if line.startswith('title:'):
+                line = line.replace('title:', '')
+            # 对句子分词
+            result = jieba.cut(line.strip())
+            result = [word for word in result if word not in stop_words]
+            # 可能一整行都是停用词，跳过
+            if len(result) == 0:
+                continue
+            print(' '.join(list(result)), file=file_output)
+    file_output.close()
+    return True
+```
+
+然后基于jieba分词的TFIDF来提取关键词
+
+```py
+def get_key_word_base_tfidf():
+    """
+    基于 TF-IDF 算法的关键词抽取
+    """
+    content = open('../txt/articles_seg.txt', 'r', encoding='utf8').read()
+
+    tags = jieba.analyse.extract_tags(content, topK=20)
+
+    for tag in tags:
+        print(tag)
+```
+
+还可以对每篇文章进行关键词提取
+
+```py
+def analyse_each_article(start_url, user_name):
+    """
+    分析每篇文章的关键词
+    """
+
+    links = get_all_article_links(start_url, user_name)
+
+    stop_words = load_stop_words()
+    with open("../txt/articles_analyse.txt", 'w', encoding='utf8') as file_output:
+        n = 0
+        for link in links:
+            try:
+                result = get_article(link)
+            except:
+                print("异常链接： ", link)
+                continue
+            sentences = []
+            for line in result['body'].split('\n'):
+                sent = [word for word in jieba.cut(line) \
+                             if word not in stop_words]
+                if len(sent) > 0:
+                    sentences.append(' '.join(sent))
+            tags = jieba.analyse.extract_tags('\n'.join(sentences), topK=20)
+            n += 1
+            print('title %d: %s' % (n, result['title']), file=file_output)
+            print('，'.join(tags), file=file_output)
+
+    return True
+```

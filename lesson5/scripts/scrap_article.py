@@ -1,6 +1,9 @@
-import re
+import re, jieba
 from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
+from collections import defaultdict
+
+import jieba.analyse
 
 headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36'}
 
@@ -141,16 +144,147 @@ def get_all_articles(start_url, user_name):
 
     return n
 
-
-def main():
+def scrap_article():
     """
-    主程序
+    文章爬取
     """
     start_url = 'http://www.cnblogs.com/'
     user_name = 'zhaopei'
 
     n = get_all_articles(start_url, user_name)
     print("从博客%s上一共爬取%d篇文章" % (start_url+user_name, n))
+
+def load_stop_words():
+    """
+    载入停用词
+    """
+    stop_words = []
+    with open('../dict/stop_words.txt', 'r', encoding='utf8') as f:
+        for line in f:
+            stop_words.append(line.strip())
+    return stop_words
+
+def get_word_freq():
+    """
+    统计词频
+    """
+    stop_words = load_stop_words()
+    word_freq = defaultdict(int) # 这个dict的value默认为0
+    with open('../txt/articles.txt', 'r', encoding='utf8') as f:
+        for line in f:
+            if line.startswith('article') or line.startswith('body:'):
+                continue
+            if line.startswith('title:'):
+                line = line.replace('title:', '')
+            # 对句子分词
+            result = jieba.cut(line.strip())
+            for word in result:
+                # 去掉停用词
+                if word in stop_words:
+                    continue
+                word_freq[word] += 1
+    return word_freq
+
+def show_word_freq(word_freq, min_freq=0):
+    """
+    将词频排序，并从高到低输入
+    """
+    word_freq_sorted = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+    for word, freq in word_freq_sorted:
+        print(word, freq)
+        if freq < min_freq:
+            break
+
+    return True
+
+def save_word_freq_to_csv(word_freq, min_freq=0):
+    """
+    将词频排序，并从高到低，保存到csv文件
+    """
+    word_freq_sorted = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+    with open('../csv/word_freq.csv', 'w', encoding='utf8') as f_csv:
+        for word, freq in word_freq_sorted:
+            print(word, ',', freq, file=f_csv)
+            if freq < min_freq:
+                break
+    return True
+
+def preprocess():
+    """
+    """
+    stop_words = load_stop_words()
+    file_output = open('../txt/articles_seg.txt', 'w', encoding='utf8')
+    with open('../txt/articles.txt', 'r', encoding='utf8') as f:
+        for line in f:
+            if line.startswith('article') or line.startswith('body:'):
+                continue
+            if line.startswith('title:'):
+                line = line.replace('title:', '')
+            # 对句子分词
+            result = jieba.cut(line.strip())
+            result = [word for word in result if word not in stop_words]
+            # 可能一整行都是停用词，跳过
+            if len(result) == 0:
+                continue
+            print(' '.join(list(result)), file=file_output)
+    file_output.close()
+    return True
+
+def get_key_word_base_tfidf():
+    """
+    基于 TF-IDF 算法的关键词抽取
+    """
+    content = open('../txt/articles_seg.txt', 'r', encoding='utf8').read()
+
+    tags = jieba.analyse.extract_tags(content, topK=20)
+
+    for tag in tags:
+        print(tag)
+
+def analyse_each_article(start_url, user_name):
+    """
+    分析每篇文章的关键词
+    """
+
+    links = get_all_article_links(start_url, user_name)
+
+    stop_words = load_stop_words()
+    with open("../txt/articles_analyse.txt", 'w', encoding='utf8') as file_output:
+        n = 0
+        for link in links:
+            try:
+                result = get_article(link)
+            except:
+                print("异常链接： ", link)
+                continue
+            sentences = []
+            for line in result['body'].split('\n'):
+                sent = [word for word in jieba.cut(line) \
+                             if word not in stop_words]
+                if len(sent) > 0:
+                    sentences.append(' '.join(sent))
+            tags = jieba.analyse.extract_tags('\n'.join(sentences), topK=20)
+            n += 1
+            print('title %d: %s' % (n, result['title']), file=file_output)
+            print('，'.join(tags), file=file_output)
+
+    return True
+
+def main():
+    """
+    主程序
+    """
+    #scrap_article()
+    #word_freq = get_word_freq()
+    #print(word_freq)
+    #show_word_freq(word_freq, min_freq=15)
+    #save_word_freq_to_csv(word_freq, min_freq=15)
+    #preprocess()
+    #get_key_word_base_tfidf()
+
+    start_url = 'http://www.cnblogs.com/'
+    user_name = 'zhaopei'
+    analyse_each_article(start_url, user_name)
 
 if __name__ == '__main__':
     main()
