@@ -7,3 +7,5 @@
 ## [lesson3 python爬虫介绍](https://github.com/ashengtx/python-tutorial/blob/master/lesson3/readme.md)
 
 ## [lesson4 python科学计算工具介绍](https://github.com/ashengtx/python-tutorial/blob/master/lesson4/readme.md)
+
+## [lesson5 python爬虫与简单文本处理](https://github.com/ashengtx/python-tutorial/blob/master/lesson5/readme.md)
